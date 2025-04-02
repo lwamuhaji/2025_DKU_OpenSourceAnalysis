@@ -169,7 +169,7 @@ void SkipList<Key>::Print() const {
   for (int level = max_level - 1; level >= 0; --level) {
     Node* node = head->next[level];
     std::cout << "Level " << level << ": ";
-    while (node != nullptr) {
+        while (node->key != INT_MAX) {
       std::cout << node->key << " ";
       node = node->next[level];
     }
