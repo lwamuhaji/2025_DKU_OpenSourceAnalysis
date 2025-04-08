@@ -15,7 +15,6 @@
 
 #include <atomic>
 
-#define MAX_INT
 
 typedef std::chrono::high_resolution_clock Clock;
 
@@ -79,15 +78,15 @@ int SkipList<Key>::RandomLevel() {
         level++;
     }
 
-    return level; // Default return value (students should modify this)
+    return level;
 }
 
 // Constructor for SkipList
 template<typename Key>
 SkipList<Key>::SkipList(int max_level, float probability)
     : max_level(max_level), probability(probability) {
-    head = new Node(INT_MIN, max_level); // INT_MIN을 갖는 head 노드 생성
-    Node* tail = new Node(INT_MAX, max_level); // INT_MAX를 갖는 tail 노드 생성
+    head = new Node(INT64_MIN, max_level); // INT_MIN을 갖는 head 노드 생성
+    Node* tail = new Node(INT64_MAX, max_level); // INT_MAX를 갖는 tail 노드 생성
     for (int level = 0; level < max_level; level++) {
         head->next[level] = tail; // head의 next를 tail로 설정
     }
@@ -99,12 +98,14 @@ void SkipList<Key>::Insert(const Key& key) {
     Node* current = head;
     std::vector<Node*> target(max_level, nullptr);
 
-    // 상위 레벨부터 한 단계씩 아래로 내려감
+    // 1. max_level부터 한 단계씩 아래로 내려감
     for (int level = max_level - 1; level >= 0; level--) {
-        while (current->next[level]->key < key) { // 다음 노드로 이동할 수 있을 때까지 이동
+        // 2. 다음 노드로 이동할 수 있을 때까지 이동
+        while (current->next[level]->key < key) {
             current = current->next[level];
         }
-        target[level] = current; // 각 레벨에서 방문된 마지막 노드는 새로 삽입되는 노드를 가리킬 가능성이 있으므로 저장해둔다.
+        // 3. 마지막 노드 저장
+        target[level] = current;
     }
 
     int random_level = RandomLevel(); // 새로운 노드의 레벨을 얻는다.
@@ -118,8 +119,30 @@ void SkipList<Key>::Insert(const Key& key) {
 // Delete function (removes a key from SkipList)
 template<typename Key>
 bool SkipList<Key>::Delete(const Key& key) const {
-    // To be implemented by students
-    return false;
+    Node* current = head;
+    std::vector<Node*> prev_nodes(max_level, nullptr);
+
+    for (int level = max_level - 1; level >= 0; level--) {
+        // skip할 수 있는 곳까지 skip
+        while (current->next[level]->key < key) {
+            current = current->next[level];
+        }
+        // 다음 레벨로 가기 전에 key를 찾았는지 확인
+        if (current->next[level]->key == key) {
+            prev_nodes[level] = current; // 삭제 대상 노드의 바로 전 노드인 경우 저장
+        }
+    }
+
+    // 실제 삭제 작업 수행
+    bool deleted = false;
+    for (int level = max_level - 1; level >= 0; level--) {
+        if (prev_nodes[level] != nullptr) {
+            prev_nodes[level]->next[level] = prev_nodes[level]->next[level]->next[level];
+            deleted = true; // 삭제가 발생했는지 기록
+        }
+    }
+
+    return deleted;
 }
 
 // Lookup function (checks if a key exists in SkipList)
@@ -154,7 +177,8 @@ std::vector<Key> SkipList<Key>::Scan(const Key& key, const int scan_num) {
             current = current->next[level];
         }
         if (current->next[level]->key == key) {
-            start_node = current->next[level]; // 일치하는 key를 찾은 경우 start_node에 저장
+            // 일치하는 key를 찾은 경우 start_node에 저장
+            start_node = current->next[level];
         }
     }
 
@@ -163,7 +187,7 @@ std::vector<Key> SkipList<Key>::Scan(const Key& key, const int scan_num) {
     current = start_node;
     std::vector<Key> nodes = { current->key };
     // 다음 노드가 마지막(INT_MAX)이 아니고, found < scan_num 이면 다음 노드로 이동
-    while (found < scan_num && current->next[0]->key != INT_MAX) {
+    while (found < scan_num && current->next[0]->key != INT64_MAX) {
         current = current->next[0];
         nodes.push_back(current->key);
     }
@@ -177,7 +201,7 @@ void SkipList<Key>::Print() const {
     for (int level = max_level - 1; level >= 0; --level) {
         Node* node = head->next[level];
         std::cout << "Level " << level << ": ";
-        while (node->key != INT_MAX) {
+        while (node->key != INT64_MAX) {
             std::cout << node->key << " ";
             node = node->next[level];
         }
