@@ -95,6 +95,7 @@ SkipList<Key>::SkipList(int max_level, float probability)
 // Insert function (inserts a key into SkipList)
 template<typename Key>
 void SkipList<Key>::Insert(const Key& key) {
+    if (Contains(key)) return;
     Node* current = head;
     std::vector<Node*> target(max_level, nullptr);
 
@@ -129,7 +130,7 @@ bool SkipList<Key>::Delete(const Key& key) const {
         }
         // 다음 레벨로 가기 전에 key를 찾았는지 확인
         if (current->next[level]->key == key) {
-            prev_nodes[level] = current; // 삭제 대상 노드의 바로 전 노드인 경우 저장
+            prev_nodes[level] = current; // 삭제 대상 노드의 바로 전 노드 저장
         }
     }
 
@@ -168,7 +169,6 @@ std::vector<Key> SkipList<Key>::Scan(const Key& key, const int scan_num) {
     if (!Contains(key)) return {};
 
     Node* current = head;
-    Node* start_node;
 
     // 해당 node로 찾아가서 start에 저장
     for (int level = max_level - 1; level >= 0; level--) {
@@ -177,14 +177,12 @@ std::vector<Key> SkipList<Key>::Scan(const Key& key, const int scan_num) {
             current = current->next[level];
         }
         if (current->next[level]->key == key) {
-            // 일치하는 key를 찾은 경우 start_node에 저장
-            start_node = current->next[level];
+            break; // 일치하는 key를 찾은 경우 탈출
         }
     }
 
     // start부터 scan_sum 만큼 탐색
     int found = 1;
-    current = start_node;
     std::vector<Key> nodes = { current->key };
     // 다음 노드가 마지막(INT_MAX)이 아니고, found < scan_num 이면 다음 노드로 이동
     while (found < scan_num && current->next[0]->key != INT64_MAX) {

@@ -240,11 +240,12 @@ int main(int argc, char *argv[]) {
     const int R = std::atoi(argv[2]);  // Lookup count
     const int B = std::atoi(argv[3]);  // Benchmark type
 
-    SkipList<Key> sl;
+    SkipList<Key> sl(16, 0.5);
 
     auto runBenchmarkType1 = [&](const std::string& name, void (*benchmarkFunc)(int, int, SkipList<Key>&)) {
         std::cout << "\n[" << name << " Benchmark in progress...]\n\n";
         benchmarkFunc(W, R, sl);
+        if (W <= 50) {printf("\n");sl.Print();}
     };
 
     switch (B) {
